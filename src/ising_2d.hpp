@@ -56,6 +56,7 @@ class ising_2d {
     double compute_susceptibility() const;
 
     void metropolis_step();
+    void metropolis_step_parallel(int num_treads);
 
     ising_result metropolis_simulation(std::size_t nb_steps, const double convergence_threshold);
     void         metropolis_simulation_with_export(std::size_t nb_steps, const std::string& filename);

@@ -53,12 +53,21 @@ int main(int argc, char* argv[]) {
     if (argc > 8) {
         y_anisotropic_factor = std::stod(argv[8]);
     }
+    if (argc <= 6) {
+        out_dir = "ising2d_results_" + std::to_string(size_x) + "x" + std::to_string(size_y) + "_T" + std::to_string(temperature) + "/";
+    }
+    std::cout << "Results stored in: " << out_dir << " folder.\n";
+
     std::filesystem::create_directories(out_dir);
     ising_2d my_ising_2d(size_x, size_y, temperature);
     my_ising_2d.set_x_anisotropic_factor(x_anisotropic_factor);
     my_ising_2d.set_y_anisotropic_factor(y_anisotropic_factor);
     my_ising_2d.initialize_random(0.45);
     my_ising_2d.metropolis_simulation_with_export(nb_steps, out_dir + "/" + filename);
+
+    const std::string python_script = CMAKE_SOURCE_DIR + std::string("/python/parse_Ising2d.py");
+    const std::string python_call = "python3 " + python_script + " -d " + out_dir + " -s 0";
+    int python_success = system(python_call.c_str());
 
     return 0;
 }

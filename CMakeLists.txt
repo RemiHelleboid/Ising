@@ -12,6 +12,8 @@ include(CMakePrintHelpers)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_compile_definitions(CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
 # add_compile_definitions(ARMIN_VERSION = $CMAKE_PROJECT_VERSION)
 
 # this variable controls the default value of the options which are normally set

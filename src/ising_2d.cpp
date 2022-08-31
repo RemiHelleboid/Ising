@@ -159,6 +159,27 @@ void ising_2d::metropolis_step() {
     }
 }
 
+void ising_2d::metropolis_step_parallel(int num_treads) {
+    std::uniform_real_distribution<>           double_distribution(0.0, 1.0);
+    std::uniform_int_distribution<std::size_t> int_distribution(0, m_size_y - 1);
+#pragma omp parallel for 
+    for (std::size_t idx_x = 0; idx_x < m_size_x; idx_x++) {
+        for (std::size_t idx_y = 0; idx_y < m_size_y; idx_y++) {
+            std::size_t x            = int_distribution(m_random_engine);
+            std::size_t y            = int_distribution(m_random_engine);
+            double      delta_energy = -2 * compute_energy(x, y);
+#pragma omp critical
+            if (delta_energy <= 0.0) {
+                set_spin(x, y, -get_spin(x, y));
+            } else {
+                if (double_distribution(m_random_engine) < std::exp(-delta_energy / m_temperature)) {
+                    set_spin(x, y, -get_spin(x, y));
+                }
+            }
+        }
+    }
+}
+
 ising_result ising_2d::metropolis_simulation(std::size_t nb_steps, const double convergence_threshold) {
     double energy = compute_total_energy();
     for (std::size_t index_simulation = 0; index_simulation < nb_steps; index_simulation++) {
