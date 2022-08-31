@@ -46,12 +46,16 @@ ising_3d::ising_3d(std::size_t size_x, std::size_t size_y, std::size_t size_z, d
  * @param z
  * @return std::array<std::pair<std::size_t, std::size_t>, 8>
  */
-std::array<std::pair<std::size_t, std::size_t>, 8> ising_3d::get_neighbors(std::size_t x, std::size_t y, std::size_t size_z) const {
-    std::array<std::pair<std::size_t, std::size_t>, 8> neighbors;
-    neighbors[0] = {x, (y + 1) % m_size_y};
-    neighbors[1] = {(x + 1) % m_size_x, y};
-    neighbors[2] = {x, (y + m_size_y - 1) % m_size_y};
-    neighbors[3] = {(x + m_size_x - 1) % m_size_x, y};
+std::array<std::array<std::size_t, 3>, 8> ising_3d::get_neighbors(std::size_t x, std::size_t y, std::size_t z) const {
+    std::array<std::array<std::size_t, 3>, 8> neighbors;
+    neighbors[0] = {x, (y + 1) % m_size_y, z};
+    neighbors[1] = {x, (y - 1 + m_size_y) % m_size_y, z};
+    neighbors[2] = {(x + 1) % m_size_x, y, z};
+    neighbors[3] = {(x - 1 + m_size_x) % m_size_x, y, z};
+    neighbors[4] = {x, y, (z + 1) % m_size_z};
+    neighbors[5] = {x, y, (z - 1 + m_size_z) % m_size_z};
+    neighbors[6] = {(x + 1) % m_size_x, (y + 1) % m_size_y, z};
+    neighbors[7] = {(x - 1 + m_size_x) % m_size_x, (y - 1 + m_size_y) % m_size_y, z};
     return neighbors;
 }
 
@@ -62,7 +66,9 @@ std::array<std::pair<std::size_t, std::size_t>, 8> ising_3d::get_neighbors(std::
  * @param y
  * @return double
  */
-double ising_3d::get_spin(std::size_t x, std::size_t y) const { return m_spin_values[x + y * m_size_x]; }
+double ising_3d::get_spin(std::size_t x, std::size_t y, std::size_t z) const {
+    return m_spin_values[x + y * m_size_x + z * m_size_x * m_size_y];
+}
 
 /**
  * @brief Set the spin value at position (x, y).
@@ -71,7 +77,9 @@ double ising_3d::get_spin(std::size_t x, std::size_t y) const { return m_spin_va
  * @param y
  * @param value
  */
-void ising_3d::set_spin(std::size_t x, std::size_t y, double value) { m_spin_values[x + y * m_size_x] = value; }
+void ising_3d::set_spin(std::size_t x, std::size_t y, std::size_t z, double value) {
+    m_spin_values[x + y * m_size_x + z * m_size_x * m_size_y] = value;
+}
 
 /**
  * @brief Initialize the spins randomly.
@@ -93,12 +101,12 @@ void ising_3d::initialize_random(double probability) {
  * @param y
  * @return double
  */
-double ising_3d::compute_energy(std::size_t x, std::size_t y) const {
-    auto   neighbors = get_neighbors(x, y);
+double ising_3d::compute_energy(std::size_t x, std::size_t y, std::size_t z) const {
+    auto   neighbors = get_neighbors(x, y, z);
     double energy    = 0.0;
     for (auto& neighbor : neighbors) {
-        energy += -get_spin(neighbor.first, neighbor.second) * get_spin(x, y) * (neighbor.first != x ? m_x_anisotropic_factor : 1.0) *
-                  (neighbor.second != y ? m_y_anisotropic_factor : 1.0);
+        energy += -get_spin(neighbor[0], neighbor[1], neighbor[2]) * get_spin(x, y, z) * (neighbor[0] != x ? m_x_anisotropic_factor : 1.0) *
+                  (neighbor[1] != y ? m_y_anisotropic_factor : 1.0) * (neighbor[2] != z ? m_z_anisotropic_factor : 1.0);
     }
     return energy;
 }
@@ -112,7 +120,9 @@ double ising_3d::compute_total_energy() const {
     double energy = 0.0;
     for (std::size_t x = 0; x < m_size_x; x++) {
         for (std::size_t y = 0; y < m_size_y; y++) {
-            energy += compute_energy(x, y);
+            for (std::size_t z = 0; z < m_size_z; z++) {
+                energy += compute_energy(x, y, z);
+            }
         }
     }
     return energy;
@@ -132,7 +142,7 @@ double ising_3d::compute_total_magnetization() const { return std::accumulate(m_
  */
 double ising_3d::compute_specific_heat() const {
     double energy = compute_total_energy();
-    return energy * energy / (m_size_x * m_size_y);
+    return energy * energy / (m_size_x * m_size_y * m_size_z);
 }
 
 /**
@@ -142,22 +152,25 @@ double ising_3d::compute_specific_heat() const {
  */
 double ising_3d::compute_susceptibility() const {
     double magnetization = compute_total_magnetization();
-    return magnetization * magnetization / (m_size_x * m_size_y);
+    return magnetization * magnetization / (m_size_x * m_size_y * m_size_z);
 }
 
 void ising_3d::metropolis_step() {
     std::uniform_real_distribution<>           double_distribution(0.0, 1.0);
-    std::uniform_int_distribution<std::size_t> int_distribution(0, m_size_y - 1);
+    std::uniform_int_distribution<std::size_t> int_distribution_x(0, m_size_x - 1);
+    std::uniform_int_distribution<std::size_t> int_distribution_y(0, m_size_y - 1);
+    std::uniform_int_distribution<std::size_t> int_distribution_z(0, m_size_z - 1);
     for (std::size_t idx_x = 0; idx_x < m_size_x; idx_x++) {
         for (std::size_t idx_y = 0; idx_y < m_size_y; idx_y++) {
-            std::size_t x            = int_distribution(m_random_engine);
-            std::size_t y            = int_distribution(m_random_engine);
-            double      delta_energy = -2 * compute_energy(x, y);
+            std::size_t x            = int_distribution_x(m_random_engine);
+            std::size_t y            = int_distribution_y(m_random_engine);
+            std::size_t z            = int_distribution_z(m_random_engine);
+            double      delta_energy = -2 * compute_energy(x, y, z);
             if (delta_energy <= 0.0) {
-                set_spin(x, y, -get_spin(x, y));
+                set_spin(x, y, z, -get_spin(x, y, z));
             } else {
                 if (double_distribution(m_random_engine) < std::exp(-delta_energy / m_temperature)) {
-                    set_spin(x, y, -get_spin(x, y));
+                    set_spin(x, y, z, -get_spin(x, y, z));
                 }
             }
         }
@@ -196,10 +209,13 @@ void ising_3d::export_to_file(const std::string& filename) const {
     std::ofstream file(filename);
     const double  size_x = static_cast<double>(m_size_x - 1);
     const double  size_y = static_cast<double>(m_size_y - 1);
+    const double  size_z = static_cast<double>(m_size_z - 1);
     file << "X,Y,Spin\n";
     for (std::size_t x = 0; x < m_size_x; x++) {
         for (std::size_t y = 0; y < m_size_y; y++) {
-            file << x / size_x << "," << y / size_y << "," << get_spin(x, y) << "\n";
+            for (std::size_t z = 0; z < m_size_y; z++) {
+                file << x / size_x << "," << y / size_y << "," << z / size_z << "," << get_spin(x, y, z) << "\n";
+            }
         }
     }
     file.close();
