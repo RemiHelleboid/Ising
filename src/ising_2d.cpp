@@ -141,6 +141,7 @@ double ising_2d::compute_susceptibility() const {
 }
 
 void ising_2d::metropolis_step() {
+    m_number_modified_spins = 0;
     std::uniform_real_distribution<>           double_distribution(0.0, 1.0);
     std::uniform_int_distribution<std::size_t> int_distribution(0, m_size_y - 1);
     for (std::size_t idx_x = 0; idx_x < m_size_x; idx_x++) {
@@ -150,9 +151,11 @@ void ising_2d::metropolis_step() {
             double      delta_energy = -2 * compute_energy(x, y);
             if (delta_energy <= 0.0) {
                 set_spin(x, y, -get_spin(x, y));
+                m_number_modified_spins++;
             } else {
                 if (double_distribution(m_random_engine) < std::exp(-delta_energy / m_temperature)) {
                     set_spin(x, y, -get_spin(x, y));
+                    m_number_modified_spins++;
                 }
             }
         }
@@ -162,7 +165,7 @@ void ising_2d::metropolis_step() {
 void ising_2d::metropolis_step_parallel(int num_treads) {
     std::uniform_real_distribution<>           double_distribution(0.0, 1.0);
     std::uniform_int_distribution<std::size_t> int_distribution(0, m_size_y - 1);
-#pragma omp parallel for 
+#pragma omp parallel for
     for (std::size_t idx_x = 0; idx_x < m_size_x; idx_x++) {
         for (std::size_t idx_y = 0; idx_y < m_size_y; idx_y++) {
             std::size_t x            = int_distribution(m_random_engine);
@@ -182,8 +185,17 @@ void ising_2d::metropolis_step_parallel(int num_treads) {
 
 ising_result ising_2d::metropolis_simulation(std::size_t nb_steps, const double convergence_threshold) {
     double energy = compute_total_energy();
+
     for (std::size_t index_simulation = 0; index_simulation < nb_steps; index_simulation++) {
         metropolis_step();
+        m_number_iterations++;
+        double       ratio_modified_spins = static_cast<double>(m_number_modified_spins) / (m_size_x * m_size_y);
+        double       new_energy           = compute_total_energy();
+        ising_result result{compute_total_energy(), compute_total_magnetization(), compute_specific_heat(), compute_susceptibility()};
+        if (ratio_modified_spins < convergence_threshold || (std::abs((new_energy - energy) / energy)) < convergence_threshold) {
+            return result;
+        }
+        energy = new_energy;
     }
     ising_result result{compute_total_energy(), compute_total_magnetization(), compute_specific_heat(), compute_susceptibility()};
     return result;

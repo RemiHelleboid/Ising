@@ -35,20 +35,24 @@ void ising_2d_span_temperature(std::size_t        size_x,
         temperatures[i] = temperature_min + i * temperature_step;
     }
     std::cout << "nb temperatures: " << nb_temperatures << std::endl;
-    const double threshold = 1e-6;
-#pragma omp parallel for schedule(dynamic)
+    const double threshold = 1e-5;
+#pragma omp parallel for schedule(dynamic) shared(temperatures, energies, magnetizations, specific_heat, susceptibility)
     for (std::size_t i = 0; i < nb_temperatures; ++i) {
         // std::cout << "temperature: " << temperatures[i] << std::endl;
         ising_2d ising(size_x, size_y, temperatures[i]);
-        ising.initialize_random(0.8);
-        const int    nb_iter = 20'000;
-        ising_result result  = ising.metropolis_simulation(nb_iter, threshold);
-        energies[i]          = result.energy;
-        magnetizations[i]    = result.magnetization;
-        specific_heat[i]     = result.specific_heat;
-        susceptibility[i]    = result.susceptibility;
+        ising.initialize_random(0.1);
+        const int    nb_iter          = 20'000;
+        ising_result result           = ising.metropolis_simulation(nb_iter, threshold);
+        energies[i]                   = result.energy;
+        magnetizations[i]             = result.magnetization;
+        specific_heat[i]              = result.specific_heat;
+        susceptibility[i]             = result.susceptibility;
+        std::size_t number_iterations = ising.get_number_iterations();
 #pragma omp critical
-        { std::cout << "temperature: " << temperatures[i] << std::endl; }
+        {
+            std::cout << "temperature: " << std::fixed << std::setprecision(2) << temperatures[i] << " converged in " << number_iterations
+                      << " iterations." << std::endl;
+        }
     }
     file << "temperature, energy, magnetization, specific_heat, susceptibility" << std::endl;
     for (std::size_t i = 0; i < nb_temperatures; ++i) {
@@ -83,8 +87,9 @@ int main(int argc, char* argv[]) {
     }
     if (argc > 6) {
         filename = argv[6];
+    } else {
+        filename = "ising_2d_" + std::to_string(size_x) + "x" + std::to_string(size_y) + ".csv";
     }
-    filename = "ising_2d_" + std::to_string(size_x) + "_" + std::to_string(size_y) + ".csv";
     ising_2d_span_temperature(size_x, size_y, min_temperature, max_temperature, temperature_step, filename);
     return 0;
 }

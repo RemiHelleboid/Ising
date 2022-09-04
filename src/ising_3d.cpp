@@ -210,7 +210,7 @@ void ising_3d::export_to_file(const std::string& filename) const {
     const double  size_x = static_cast<double>(m_size_x - 1);
     const double  size_y = static_cast<double>(m_size_y - 1);
     const double  size_z = static_cast<double>(m_size_z - 1);
-    file << "X,Y,Spin\n";
+    file << "X,Y,Z,Spin\n";
     for (std::size_t x = 0; x < m_size_x; x++) {
         for (std::size_t y = 0; y < m_size_y; y++) {
             for (std::size_t z = 0; z < m_size_y; z++) {

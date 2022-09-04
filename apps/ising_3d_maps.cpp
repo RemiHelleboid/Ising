@@ -24,8 +24,8 @@ int main(int argc, char* argv[]) {
     std::size_t size_z               = 150;
     std::size_t nb_steps             = 100000;
     double      temperature          = 0.1;
-    std::string filename             = "ising_2d_map";
-    std::string out_dir              = ".";
+    std::string filename             = "ising_3d_config";
+    std::string out_dir              = "results3d/";
     double      x_anisotropic_factor = 1.0;
     double      y_anisotropic_factor = 1.0;
     double      z_anisotropic_factor = 1.0;
