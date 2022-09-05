@@ -35,8 +35,9 @@ void ising_2d_span_temperature(std::size_t        size_x,
         temperatures[i] = temperature_min + i * temperature_step;
     }
     std::cout << "nb temperatures: " << nb_temperatures << std::endl;
-    const double threshold = 1e-5;
-#pragma omp parallel for schedule(dynamic) shared(temperatures, energies, magnetizations, specific_heat, susceptibility)
+    const double threshold         = 1e-8;
+    std::size_t  temperature_count = 0;
+#pragma omp parallel for schedule(dynamic) reduction(+ : temperature_count)
     for (std::size_t i = 0; i < nb_temperatures; ++i) {
         // std::cout << "temperature: " << temperatures[i] << std::endl;
         ising_2d ising(size_x, size_y, temperatures[i]);
@@ -48,11 +49,10 @@ void ising_2d_span_temperature(std::size_t        size_x,
         specific_heat[i]              = result.specific_heat;
         susceptibility[i]             = result.susceptibility;
         std::size_t number_iterations = ising.get_number_iterations();
-#pragma omp critical
-        {
-            std::cout << "temperature: " << std::fixed << std::setprecision(2) << temperatures[i] << " converged in " << number_iterations
-                      << " iterations." << std::endl;
-        }
+        temperature_count++;
+#pragma omp single
+        std::cout << "temperature: " << std::fixed << std::setprecision(2) << temperatures[i] << " converged in " << number_iterations
+                  << " iterations. (" << temperature_count << ") / " << nb_temperatures << std::endl;
     }
     file << "temperature, energy, magnetization, specific_heat, susceptibility" << std::endl;
     for (std::size_t i = 0; i < nb_temperatures; ++i) {
