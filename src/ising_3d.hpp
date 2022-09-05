@@ -21,23 +21,18 @@
 
 #include "ising_2d.hpp"
 
-class ising_3d {
+class ising_3d : public ising_base {
  private:
-    std::size_t         m_size_x;
-    std::size_t         m_size_y;
-    std::size_t         m_size_z;
-    std::vector<double> m_spin_values;
-    std::mt19937        m_random_engine;
-    double              m_temperature;
-    double              m_x_anisotropic_factor = 1.0;
-    double              m_y_anisotropic_factor = 1.0;
-    double              m_z_anisotropic_factor = 1.0;
+    std::size_t m_size_x;
+    std::size_t m_size_y;
+    std::size_t m_size_z;
+    double      m_x_anisotropic_factor = 1.0;
+    double      m_y_anisotropic_factor = 1.0;
+    double      m_z_anisotropic_factor = 1.0;
 
  public:
     ising_3d(std::size_t size_x, std::size_t size_y, std::size_t size_z, double temperature = 1.0);
-    ~ising_3d() = default;
 
-    void set_temperature(double temperature) { m_temperature = temperature; }
     void set_x_anisotropic_factor(double x_anisotropic_factor) { m_x_anisotropic_factor = x_anisotropic_factor; }
     void set_y_anisotropic_factor(double y_anisotropic_factor) { m_y_anisotropic_factor = y_anisotropic_factor; }
     void set_z_anisotropic_factor(double z_anisotropic_factor) { m_z_anisotropic_factor = z_anisotropic_factor; }
@@ -46,12 +41,10 @@ class ising_3d {
     void                                      set_spin(std::size_t x, std::size_t y, std::size_t z, double value);
     std::array<std::array<std::size_t, 3>, 8> get_neighbors(std::size_t x, std::size_t y, std::size_t z) const;
 
-    void   initialize_random(double probability);
     double compute_energy(std::size_t x, std::size_t y, std::size_t z) const;
-    double compute_total_energy() const;
-    double compute_total_magnetization() const;
-    double compute_specific_heat() const;
-    double compute_susceptibility() const;
+    double compute_total_energy() const override;
+    double compute_specific_heat() const override;
+    double compute_susceptibility() const override;
 
     void metropolis_step();
 

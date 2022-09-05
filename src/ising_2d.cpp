@@ -28,11 +28,11 @@
  * @param temperature
  */
 ising_2d::ising_2d(std::size_t size_x, std::size_t size_y, double temperature)
-    : m_size_x(size_x),
-      m_size_y(size_y),
-      m_spin_values(size_x * size_y),
-      m_random_engine(std::random_device{}()),
-      m_temperature(temperature) {}
+    : ising_base(temperature),
+      m_size_x(size_x),
+      m_size_y(size_y) {
+    m_spins.resize(m_size_x * m_size_y);
+}
 
 /**
  * @brief Get the neighbor of the spin at position (x, y).
@@ -57,7 +57,7 @@ std::array<std::pair<std::size_t, std::size_t>, 4> ising_2d::get_neighbors(std::
  * @param y
  * @return double
  */
-double ising_2d::get_spin(std::size_t x, std::size_t y) const { return m_spin_values[x + y * m_size_x]; }
+double ising_2d::get_spin(std::size_t x, std::size_t y) const { return m_spins[x + y * m_size_x]; }
 
 /**
  * @brief Set the spin value at position (x, y).
@@ -66,20 +66,7 @@ double ising_2d::get_spin(std::size_t x, std::size_t y) const { return m_spin_va
  * @param y
  * @param value
  */
-void ising_2d::set_spin(std::size_t x, std::size_t y, double value) { m_spin_values[x + y * m_size_x] = value; }
-
-/**
- * @brief Initialize the spins randomly.
- *
- * @param probability
- *
- */
-void ising_2d::initialize_random(double probability) {
-    std::uniform_real_distribution<> double_distribution(0.0, 1.0);
-    std::generate(m_spin_values.begin(), m_spin_values.end(), [&]() {
-        return double_distribution(m_random_engine) < probability ? 1.0 : -1.0;
-    });
-}
+void ising_2d::set_spin(std::size_t x, std::size_t y, double value) { m_spins[x + y * m_size_x] = value; }
 
 /**
  * @brief Compute the energy of the spin at position (x, y).
@@ -118,7 +105,7 @@ double ising_2d::compute_total_energy() const {
  *
  * @return double
  */
-double ising_2d::compute_total_magnetization() const { return std::accumulate(m_spin_values.begin(), m_spin_values.end(), 0.0); }
+double ising_2d::compute_total_magnetization() const { return std::accumulate(m_spins.begin(), m_spins.end(), 0.0); }
 
 /**
  * @brief Compute the total magnetization of the system.

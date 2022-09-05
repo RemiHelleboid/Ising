@@ -1,9 +1,9 @@
 /**
- * @file simple_ising_2d.cpp
+ * @file ising_3d_temperature.cpp
  * @author remzerrr (remi.helleboid@gmail.com)
  * @brief
  * @version 0.1
- * @date 2022-08-29
+ * @date 2022-09-05
  *
  * @copyright Copyright (c) 2022
  *
@@ -16,9 +16,11 @@
 #include <iostream>
 
 #include "ising_2d.hpp"
+#include "ising_3d.hpp"
 
-void ising_2d_span_temperature(std::size_t        size_x,
+void ising_3d_span_temperature(std::size_t        size_x,
                                std::size_t        size_y,
+                               std::size_t        size_z,
                                double             temperature_min,
                                double             temperature_max,
                                double             temperature_step,
@@ -39,8 +41,7 @@ void ising_2d_span_temperature(std::size_t        size_x,
     std::size_t  temperature_count = 0;
 #pragma omp parallel for schedule(dynamic) reduction(+ : temperature_count)
     for (std::size_t i = 0; i < nb_temperatures; ++i) {
-        // std::cout << "temperature: " << temperatures[i] << std::endl;
-        ising_2d ising(size_x, size_y, temperatures[i]);
+        ising_3d ising(size_x, size_y, size_z, temperatures[i]);
         ising.initialize_random(0.1);
         const int    nb_iter          = 20'000;
         ising_result result           = ising.metropolis_simulation(nb_iter, threshold);
@@ -64,11 +65,12 @@ void ising_2d_span_temperature(std::size_t        size_x,
 int main(int argc, char* argv[]) {
     std::size_t size_x           = 150;
     std::size_t size_y           = 150;
+    std::size_t size_z           = 150;
     double      min_temperature  = 0.1;
     double      max_temperature  = 1.0;
     double      temperature_step = 0.1;
     std::string filename         = "ising_2d.csv";
-    std::cout << "Usage: " << argv[0] << " [size_x] [size_y] [min_temperature] [max_temperature] [temperature_step] [filename]"
+    std::cout << "Usage: " << argv[0] << " [size_x] [size_y] [size_z] [min_temperature] [max_temperature] [temperature_step] [filename]"
               << std::endl;
     if (argc > 1) {
         size_x = std::stoi(argv[1]);
@@ -77,19 +79,22 @@ int main(int argc, char* argv[]) {
         size_y = std::stoi(argv[2]);
     }
     if (argc > 3) {
-        min_temperature = std::stod(argv[3]);
+        size_z = std::stoi(argv[3]);
     }
     if (argc > 4) {
-        max_temperature = std::stod(argv[4]);
+        min_temperature = std::stod(argv[4]);
     }
     if (argc > 5) {
-        temperature_step = std::stod(argv[5]);
+        max_temperature = std::stod(argv[5]);
     }
     if (argc > 6) {
-        filename = argv[6];
-    } else {
-        filename = "ising_2d_" + std::to_string(size_x) + "x" + std::to_string(size_y) + ".csv";
+        temperature_step = std::stod(argv[6]);
     }
-    ising_2d_span_temperature(size_x, size_y, min_temperature, max_temperature, temperature_step, filename);
+    if (argc > 7) {
+        filename = argv[7];
+    } else {
+        filename = "ising_3d_" + std::to_string(size_x) + "x" + std::to_string(size_y) + "z" + std::to_string(size_z) + ".csv";
+    }
+    ising_3d_span_temperature(size_x, size_y, size_z, min_temperature, max_temperature, temperature_step, filename);
     return 0;
 }

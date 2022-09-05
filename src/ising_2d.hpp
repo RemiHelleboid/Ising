@@ -19,40 +19,26 @@
 #include <random>
 #include <vector>
 
-struct ising_result {
-    double energy;
-    double magnetization;
-    double specific_heat;
-    double susceptibility;
-};
+#include "ising_base.hpp"
 
-class ising_2d {
+class ising_2d : public ising_base {
  private:
-    std::size_t         m_size_x;
-    std::size_t         m_size_y;
-    std::vector<double> m_spin_values;
-    std::mt19937        m_random_engine;
-    double              m_temperature;
-    double              m_x_anisotropic_factor = 1.0;
-    double              m_y_anisotropic_factor = 1.0;
+    std::size_t m_size_x;
+    std::size_t m_size_y;
 
-    std::size_t m_number_iterations     = 0;
-    std::size_t m_number_modified_spins = 0;
+    double m_x_anisotropic_factor = 1.0;
+    double m_y_anisotropic_factor = 1.0;
 
  public:
     ising_2d(std::size_t size_x, std::size_t size_y, double temperature = 1.0);
-    ~ising_2d() = default;
 
-    void set_temperature(double temperature) { m_temperature = temperature; }
     void set_x_anisotropic_factor(double x_anisotropic_factor) { m_x_anisotropic_factor = x_anisotropic_factor; }
     void set_y_anisotropic_factor(double y_anisotropic_factor) { m_y_anisotropic_factor = y_anisotropic_factor; }
 
     double                                             get_spin(std::size_t x, std::size_t y) const;
     void                                               set_spin(std::size_t x, std::size_t y, double value);
     std::array<std::pair<std::size_t, std::size_t>, 4> get_neighbors(std::size_t x, std::size_t y) const;
-    std::size_t                                        get_number_iterations() const { return m_number_iterations; }
 
-    void   initialize_random(double probability);
     double compute_energy(std::size_t x, std::size_t y) const;
     double compute_total_energy() const;
     double compute_total_magnetization() const;

@@ -21,6 +21,7 @@
 #include <random>
 
 #include "ising_3d.hpp"
+#include "ising_base.hpp"
 
 /**
  * @brief Construct a new ising 2d::ising 2d object.
@@ -31,12 +32,12 @@
  * @param temperature
  */
 ising_3d::ising_3d(std::size_t size_x, std::size_t size_y, std::size_t size_z, double temperature)
-    : m_size_x(size_x),
+    : ising_base(temperature),
+      m_size_x(size_x),
       m_size_y(size_y),
-      m_size_z(size_z),
-      m_spin_values(size_x * size_y * size_z),
-      m_random_engine(std::random_device{}()),
-      m_temperature(temperature) {}
+      m_size_z(size_z) {
+    m_spins.resize(m_size_x * m_size_y * m_size_z);
+}
 
 /**
  * @brief Get the neighbor of the spin at position (x, y, z).
@@ -66,9 +67,7 @@ std::array<std::array<std::size_t, 3>, 8> ising_3d::get_neighbors(std::size_t x,
  * @param y
  * @return double
  */
-double ising_3d::get_spin(std::size_t x, std::size_t y, std::size_t z) const {
-    return m_spin_values[x + y * m_size_x + z * m_size_x * m_size_y];
-}
+double ising_3d::get_spin(std::size_t x, std::size_t y, std::size_t z) const { return m_spins[x + y * m_size_x + z * m_size_x * m_size_y]; }
 
 /**
  * @brief Set the spin value at position (x, y).
@@ -78,20 +77,7 @@ double ising_3d::get_spin(std::size_t x, std::size_t y, std::size_t z) const {
  * @param value
  */
 void ising_3d::set_spin(std::size_t x, std::size_t y, std::size_t z, double value) {
-    m_spin_values[x + y * m_size_x + z * m_size_x * m_size_y] = value;
-}
-
-/**
- * @brief Initialize the spins randomly.
- *
- * @param probability
- *
- */
-void ising_3d::initialize_random(double probability) {
-    std::uniform_real_distribution<> double_distribution(0.0, 1.0);
-    std::generate(m_spin_values.begin(), m_spin_values.end(), [&]() {
-        return double_distribution(m_random_engine) < probability ? 1.0 : -1.0;
-    });
+    m_spins[x + y * m_size_x + z * m_size_x * m_size_y] = value;
 }
 
 /**
@@ -127,13 +113,6 @@ double ising_3d::compute_total_energy() const {
     }
     return energy;
 }
-
-/**
- * @brief Compute the total magnetization of the system.
- *
- * @return double
- */
-double ising_3d::compute_total_magnetization() const { return std::accumulate(m_spin_values.begin(), m_spin_values.end(), 0.0); }
 
 /**
  * @brief Compute the total magnetization of the system.
@@ -180,6 +159,7 @@ void ising_3d::metropolis_step() {
 ising_result ising_3d::metropolis_simulation(std::size_t nb_steps, const double convergence_threshold) {
     double energy = compute_total_energy();
     for (std::size_t index_simulation = 0; index_simulation < nb_steps; index_simulation++) {
+        m_number_iterations++;
         metropolis_step();
     }
     ising_result result{compute_total_energy(), compute_total_magnetization(), compute_specific_heat(), compute_susceptibility()};
